@@ -7,10 +7,10 @@ import routers
 import utils
 
 urls = {
-    '^/$': routers.default,
-    '^/printerLst$': routers.printerList,
-    '^/printImg$': routers.printImg,
-    '^/defaultPrinter$': routers.defaultPrinter,
+    '^/$': routers.default.HTTPHandler,
+    '^/printerLst$': routers.printerList.HTTPHandler,
+    '^/printImg$': routers.printImg.HTTPHandler,
+    '^/defaultPrinter$': routers.defaultPrinter.HTTPHandler,
 }
 
 # HTTPRequestHandler class

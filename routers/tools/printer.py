@@ -3,7 +3,7 @@ import win32ui
 from PIL import Image
 from PIL import Image, ImageWin
 
-def print(imgUrl):
+def printImg(imgUrl):
     HORZRES = 8
     VERTRES = 10
     LOGPIXELSX = 88
@@ -37,3 +37,35 @@ def print(imgUrl):
     hDC.EndPage ()
     hDC.EndDoc ()
     hDC.DeleteDC ()
+
+
+#########################################
+# https://msdn.microsoft.com/en-us/library/cc244669.aspx
+
+# 枚举本地打印机
+PRINTER_ENUM_LOCAL = 0x00000002
+# 枚举由name参数指定的打印机。其中的名字可以是一个供应商、域或服务器。如name为NULL，则枚举出可用的打印机
+PRINTER_ENUM_NAME = 0x00000008
+# 枚举共享打印机
+PRINTER_ENUM_SHARED =  0x00000020
+
+
+class Printer(object):
+    @classmethod
+    def GetDefaultPrinter(cls):
+        return win32print.GetDefaultPrinter()
+
+
+
+class ImgPrinter(object):
+    @classmethod
+    def enumPrinters(cls, flag=PRINTER_ENUM_LOCAL, name=None, lvl=1):
+        """
+        @return: (flags, description, name, comment)
+        """
+        # printer enum flag:
+        return win32print.EnumPrinters(flag, name, lvl)
+
+    @classmethod
+    def print(cls, imgUrl):
+        return printImg(imgUrl)
