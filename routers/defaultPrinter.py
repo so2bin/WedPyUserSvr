@@ -10,5 +10,5 @@ class HTTPHandler(BaseHandler):
         return cls.jsonResponse(request)
 
     @classmethod
-    def d0Post(self, request):
+    def doPost(self, request):
         pass

@@ -11,6 +11,7 @@ urls = {
     '^/printerLst$': routers.printerList.HTTPHandler,
     '^/printImg$': routers.printImg.HTTPHandler,
     '^/defaultPrinter$': routers.defaultPrinter.HTTPHandler,
+    # '^/saveBase64$': routers.
 }
 
 # HTTPRequestHandler class
