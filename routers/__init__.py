@@ -3,3 +3,4 @@ from . import default
 from . import printerList
 from . import printImg
 from . import saveBase64
+from . import beauty

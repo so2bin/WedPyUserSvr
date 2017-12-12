@@ -12,6 +12,7 @@ urls = {
     '^/printImg$': routers.printImg.HTTPHandler,
     '^/defaultPrinter$': routers.defaultPrinter.HTTPHandler,
     # '^/saveBase64$': routers.
+    '^/enhanceImg$': routers.beauty.HTTPHandler,
 }
 
 # HTTPRequestHandler class
@@ -26,7 +27,7 @@ class SimpleHTTPServerRequestHandler(BaseHTTPRequestHandler):
                 return handler.doGet(self)
 
     def do_POST(self):
-        utils.parseQuery(self)
+        utils.parsePost(self)
         for url, handler in urls.items():
             urlRe = re.compile(url)
             if urlRe.match(self.path):
