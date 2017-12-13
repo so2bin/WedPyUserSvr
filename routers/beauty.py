@@ -1,7 +1,7 @@
 ##############################################
 # 照片美化并保存到本地
 import imghdr
-from os
+import os
 from routers.basehandler import BaseHandler
 
 from config import IMG_SUPPORTS, DEFAULT_IMG_EXT
