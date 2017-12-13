@@ -11,7 +11,7 @@ def brightnessImage(imgData, val):
     """
     if not imgData:
         return None
-    if not isinstance(val):
+    if isinstance(val, str):
         try:
             val = float(val)
         except ValueError:
@@ -25,7 +25,7 @@ def contrastImage(imgData, val):
     """
     if not imgData:
         return None
-    if not isinstance(val):
+    if isinstance(val, str):
         try:
             val = float(val)
         except ValueError:

@@ -6,7 +6,7 @@ import re
 # from exceptions import ParameterError
 
 IMG_NO_LEN = 4
-RE_IMG_NO_PATTERN = '^[0-9A-Z]\{%s\}' % IMG_NO_LEN
+RE_IMG_NO_PATTERN = '^[0-9A-Z]{%s}' % IMG_NO_LEN
 RE_OBJ_IMG_NO = re.compile(RE_IMG_NO_PATTERN)
 DEF_START_IMG_NO = '0'*IMG_NO_LEN
 

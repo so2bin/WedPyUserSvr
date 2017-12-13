@@ -8,7 +8,7 @@ from .tools.printer import Printer
 class HTTPHandler(BaseHandler):
     @classmethod
     def doGet(cls, request):
-        request.data = Printer.GetDefaultPrinter()
+        request.response = Printer.GetDefaultPrinter()
         return cls.jsonResponse(request)
 
     @classmethod

@@ -8,7 +8,7 @@ class HTTPHandler(BaseHandler):
     @classmethod
     def doGet(cls, request):
         ImgPrinter.print(request.queryParams['imgUrl'])
-        request.data = {'status': 0}
+        request.response = {'status': 0}
         return cls.jsonResponse(request)
 
     @classmethod

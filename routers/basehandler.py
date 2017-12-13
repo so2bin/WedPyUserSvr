@@ -13,19 +13,22 @@ class BaseHandler(object):
         raise exceptions.NotImplementationError('doGet method is not impleted')
 
     @classmethod
-    def jsonResponse(cls, request, status=200):
+    def jsonResponse(cls, request, response=None, status=200):
         """
-        response json with dict data
+        response json with dict data:
+            response or request.response
         """
-        if not request.data:
-            return
-        if isinstance(request.data, (list, dict)):
-            data_str = json.dumps(request.data)
-        elif isinstance(request.data, str):
-            data_str = request.data
+        data = response or request.response
+        if not data:
+            data = ""
+
+        if isinstance(data, (list, dict)):
+            data_str = json.dumps(data)
+        elif isinstance(data, str):
+            data_str = data
         else:
             assert data_str, \
-                "json response data must be dict/str/list type but: %s" % type(request.data)
+                "json response data must be dict/str/list type but: %s" % type(data)
 
         # Send response status code
         request.send_response(status)

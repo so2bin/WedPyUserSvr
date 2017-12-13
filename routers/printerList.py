@@ -20,7 +20,7 @@ class HTTPHandler(BaseHandler):
                 'printProcessor': ptr_obj['pPrintProcessor'],
                 'status': [ptr_obj['Status'], PrinterStatus.type_to_text(ptr_obj['Status'])]
             })
-        request.data = res
+        request.response = res
         return cls.jsonResponse(request)
 
     @classmethod
