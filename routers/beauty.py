@@ -89,4 +89,4 @@ class HTTPHandler(BaseHandler):
             # save
             svImgPath = os.path.join(toAddr, "%s.%s" % (snm, svImgExt))
             imgData.save(svImgPath)
-        return cls.jsonResponse(request, {'status': 0})
+        return cls.jsonResponse(request, {'status': 0, 'imgNo': saveNos})
