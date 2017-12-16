@@ -1,9 +1,30 @@
+import os
+import imghdr
 import win32print
 import win32ui
 from PIL import Image
 from PIL import Image, ImageWin
 
+from config import IMG_SUPPORTS
+
+
+def preProcessImg(imgUrl, templateUrl, cutOpt, composeOpt):
+    """
+    预处理照片
+    @params imgUrl: 处理照片
+    @params templateUrl: 模板照片
+    @params cutOpt: 剪切比例 {w: 3, h: 2}
+    @params composeOpt: 合成参数 {startPos:(0,0), endPos:(0,0)}  距左上角与右下角的距离(x,y)
+    """
+    pass
+
+
 def printImg(imgUrl):
+    if not imgUrl:
+        return None
+    if not os.path.isfile(imgUrl) or imghdr.what(imgUrl) not in IMG_SUPPORTS:
+        return None
+    imgDir, imgName = os.path.split(imgUrl)
     HORZRES = 8
     VERTRES = 10
     LOGPIXELSX = 88
@@ -37,6 +58,7 @@ def printImg(imgUrl):
     hDC.EndPage ()
     hDC.EndDoc ()
     hDC.DeleteDC ()
+    return imgName
 
 
 #########################################

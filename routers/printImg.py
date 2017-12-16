@@ -7,8 +7,10 @@ from routers.basehandler import BaseHandler
 class HTTPHandler(BaseHandler):
     @classmethod
     def doGet(cls, request):
-        ImgPrinter.print(request.queryParams['imgUrl'])
-        request.response = {'status': 0}
+        imgName = ImgPrinter.print(request.queryParams['imgUrl'])
+        if not imgName:
+            request.response = {'status': 1, 'msg': 'Print Error, Maybe Invalid image address'}
+        request.response = {'status': 0, 'imgName': imgName}
         return cls.jsonResponse(request)
 
     @classmethod
