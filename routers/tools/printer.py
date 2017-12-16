@@ -83,7 +83,7 @@ def preProcessImg(imgUrl, templateUrl, cutOpt, composeOpt):
     orw = img.size[0]
     orh = img.size[1]
     if orw > orh:
-        img = imb.rotate(90, expand=True)
+        img = img.rotate(90, expand=True)
         orw, orh = orh, orw
 
     # 按比例剪切
