@@ -107,14 +107,14 @@ def getConbinedImg(oriImgData, tmpImgData, tmp, bReverse):
     # 图片在上
     if not bReverse:
         #合成图片
-        cnbImg = conbineImgs(imgData, tmpImgData, {
+        cnbImg = conbineImgs(oriImgData, tmpImgData, {
             'box': (x, y , w, h)
         })
     # 模板在上
     else:
         # 创建一张空白图片先合成原始图片
         nullImg = Image.new('RGBA', (tmp['realW'], tmp['realH']))
-        bkImg = conbineImgs(imgData, nullImg, {
+        bkImg = conbineImgs(oriImgData, nullImg, {
             'box': (x, y , w, h)
         })
         # 再与模板进行合成，模板在上，图片在下
