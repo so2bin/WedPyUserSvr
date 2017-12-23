@@ -2,13 +2,15 @@ import os
 import imghdr
 import win32print
 import win32ui
+import requests
+from io import BytesIO
 from PIL import Image
 from PIL import Image, ImageWin
 
 from config import IMG_SUPPORTS
 
 # 剪切比例的精度
-CUT_PERCISION = 10
+CUT_PERCISION = 5
 
 def calcCutInfo(orw, orh, cutOpt):
     """
@@ -36,15 +38,15 @@ def cutImg(imgData, _type, dv, newW, newH):
     @params _type: W, H
     """
     if _type == 'W':
-        imgData.crop((dv, 0, newW, newH))
+        imgData = imgData.crop((dv, 0, newW, newH))
     elif _type == 'H':
-        imgData.crop((0, dv, newW, newH))
+        imgData = imgData.crop((0, dv, newW, newH))
     return imgData
 
 
 def zoomImg(imgData, printW, printH):
     """
-    等比例绽放
+    等比例缩放
     """
     ratios = [1.0 * printW / imgData.size[0], 1.0 * printH / imgData.size[1]]
     scale = min (ratios)
@@ -71,41 +73,45 @@ def conbineImgs(upImgData, lowImgData, opt):
     return lowImgData
 
 
-def preProcessImg(imgUrl, templateUrl, cutOpt, composeOpt):
+def preProcessImg(img, tmp):
     """
-    预处理照片
-    @params imgUrl: 处理照片
-    @params templateUrl: 模板照片
-    @params cutOpt: 剪切比例 {w: 3, h: 2}
-    @params composeOpt: 合成参数 (x,y,w,h)  距左上角距离(x,y)与像素宽高(w,h)
+    预处理照片：
+      1. 根据比例剪切成用户选择的照片区域的比例
+      2. 缩放照片到用户选择区域映射的尺寸
+    @params img: 待处理照片数据
+    @params tmp: 模板参数
     """
-    img = Image.open(imgUrl)
     orw = img.size[0]
     orh = img.size[1]
-    if orw > orh:
-        img = img.rotate(90, expand=True)
-        orw, orh = orh, orw
-
     # 按比例剪切
+    cutOpt = {'w': tmp['selW'], 'h': tmp['selH']}
     cedge, dv, newW, newH = calcCutInfo(orw, orh, cutOpt)
     if cedge:
         img = cutImg(img, cedge, dv, newW, newH)
-    return img
+    # 缩放到对应的选择区域内
+    return img.resize((tmp['selW'], tmp['selH']))
 
 
-def printImg(imgUrl, templateUrl, cutOpt, composeOpt):
+def printImg(imgUrl, lngTmp, hrTmp):
     """
     预处理照片
     @params imgUrl: 处理照片
-    @params templateUrl: 模板照片
     @params cutOpt: 剪切比例 {w: 3, h: 2}
     @params composeOpt: 合成参数 (x,y,w,h)  距左上角距离(x,y)与像素宽高(w,h)
     """
-    if not imgUrl or not templateUrl:
+    if not imgUrl or not lngTmp or not hrTmp:
         return None
-    if not os.path.isfile(imgUrl) or imghdr.what(imgUrl) not in IMG_SUPPORTS \
-        or not os.path.isfile(templateUrl) or imghdr.what(templateUrl) not in IMG_SUPPORTS:
+    if not os.path.isfile(imgUrl) or imghdr.what(imgUrl) not in IMG_SUPPORTS:
         return None
+    imgData = Image.open(imgUrl)
+    if not imgData:
+        return None
+    # w > h 用横向模板 否则 竖向模板
+    if imgData.size[0] > imgData.size[1]:
+        tmp = hrTmp
+    else:
+        tmp = lngTmp
+
     imgDir, imgName = os.path.split(imgUrl)
     HORZRES = 8
     VERTRES = 10
@@ -123,26 +129,33 @@ def printImg(imgUrl, templateUrl, cutOpt, composeOpt):
     printer_size = hDC.GetDeviceCaps (PHYSICALWIDTH), hDC.GetDeviceCaps (PHYSICALHEIGHT)
     printer_margins = hDC.GetDeviceCaps (PHYSICALOFFSETX), hDC.GetDeviceCaps (PHYSICALOFFSETY)
     # 预处理
-    imgData = preProcessImg(imgUrl, templateUrl, cutOpt, composeOpt)
+    imgData = preProcessImg(imgData, tmp)
     #合成图片
-    lowImgData = Image.open(templateUrl)
-    (x, y, w, h) = composeOpt
+    tmpUrl = tmp['tmpUrl']
+    if tmpUrl.startswith('http'):
+        tmpRes = requests.get(tmpUrl)
+        tmpUrl = BytesIO(tmpRes.content)
+    lowImgData = Image.open(tmpUrl)
+    # 模板所有照片的尺寸需要resize到规定的模板尺寸
+    lowImgData = lowImgData.resize((tmp['realW'], tmp['realH']))
+    (x, y, w, h) = (tmp['sx'], tmp['sy'], tmp['selW'], tmp['selH'])
 
-    if lowImgData.size[0] > lowImgData.size[1]:
-        lowImgData = lowImgData.rotate(90, expand=True)
-        x, y = y, x
-        w, h = h, w
+    # if lowImgData.size[0] > lowImgData.size[1]:
+    #     lowImgData = lowImgData.rotate(90, expand=True)
+    #     x, y = y, x
+    #     w, h = h, w
 
     cnbImg = conbineImgs(imgData, lowImgData, {
         'box': (x, y , w, h)
     })
+    # cnbImg.save('D:\\Node\\Imgs\\comp\\%s.png' % imgName)
+    # return imgName
     # cnbImg.show()
-    # zoom
     scaled_width, scaled_height = zoomImg(cnbImg, printer_size[0], printer_size[1])
 
     hDC.StartDoc (file_name)
     hDC.StartPage ()
-    dib = ImageWin.Dib (imgData)
+    dib = ImageWin.Dib (cnbImg)
     x1 = int ((printer_size[0] - scaled_width) / 2)
     y1 = int ((printer_size[1] - scaled_height) / 2)
     x2 = x1 + scaled_width
@@ -182,5 +195,5 @@ class ImgPrinter(object):
         return win32print.EnumPrinters(flag, name, lvl)
 
     @classmethod
-    def print(cls, imgUrl, templateUrl, cutOpt, composeOpt):
-        return printImg(imgUrl, templateUrl, cutOpt, composeOpt)
+    def print(cls, imgUrl, lngTmp, hrTmp):
+        return printImg(imgUrl, lngTmp, hrTmp)

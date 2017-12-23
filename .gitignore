@@ -1,3 +1,7 @@
 routers/__pycache__/*
 routers/tools/__pycache__/*
  __pycache__/*
+/__pycache__
+/libs/__pycache__
+/routers/__pycache__
+/routers/tools/__pycache__
