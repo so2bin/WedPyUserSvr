@@ -4,7 +4,6 @@ import win32print
 import win32ui
 import requests
 from io import BytesIO
-from PIL import Image
 from PIL import Image, ImageWin
 
 from config import IMG_SUPPORTS
@@ -53,7 +52,7 @@ def zoomImg(imgData, printW, printH):
     return round(imgData.size[0]*scale), round(imgData.size[1]*scale)
 
 
-def conbineImgs(upImgData, lowImgData, opt):
+def conbineImgs(upImgData, lowImgData, opt, mask=None):
     """
     合成图片，将upimg黏贴到lowimg上，位置与尺寸参数在opt
     @params upImgData: 上层图片
@@ -69,7 +68,10 @@ def conbineImgs(upImgData, lowImgData, opt):
         upImgData = upImgData.crop((0,0,opt['imgArea']['w'],opt['imgArea']['h']))
     region = upImgData
     region = region.resize((w, h))
-    lowImgData.paste(region, (x, y, w+x, y+h))
+    if mask:
+        lowImgData.paste(region, (x, y, w+x, y+h), mask)
+    else:
+        lowImgData.paste(region, (x, y, w+x, y+h))
     return lowImgData
 
 
@@ -92,12 +94,43 @@ def preProcessImg(img, tmp):
     return img.resize((tmp['selW'], tmp['selH']))
 
 
-def printImg(imgUrl, lngTmp, hrTmp):
+def getConbinedImg(oriImgData, tmpImgData, tmp, bReverse):
     """
-    预处理照片
+    获取合成图片
+    @params bReverse: True: 模板在上, False: 模板在下
+    """
+    # 预处理
+    oriImgData = preProcessImg(oriImgData, tmp)
+    # 模板所有照片的尺寸需要resize到规定的模板尺寸
+    tmpImgData = tmpImgData.resize((tmp['realW'], tmp['realH']))
+    (x, y, w, h) = (tmp['sx'], tmp['sy'], tmp['selW'], tmp['selH'])
+    # 图片在上
+    if not bReverse:
+        #合成图片
+        cnbImg = conbineImgs(imgData, tmpImgData, {
+            'box': (x, y , w, h)
+        })
+    # 模板在上
+    else:
+        # 创建一张空白图片先合成原始图片
+        nullImg = Image.new('RGBA', (tmp['realW'], tmp['realH']))
+        bkImg = conbineImgs(imgData, nullImg, {
+            'box': (x, y , w, h)
+        })
+        # 再与模板进行合成，模板在上，图片在下
+        cnbImg = conbineImgs(tmpImgData, bkImg, {
+            'box': (0, 0, tmp['realW'], tmp['realH'])
+        }, tmpImgData)
+    return cnbImg
+
+
+def printImg(imgUrl, lngTmp, hrTmp, bReverse):
+    """
+    打印照片，模板在下，照片在上
     @params imgUrl: 处理照片
     @params cutOpt: 剪切比例 {w: 3, h: 2}
     @params composeOpt: 合成参数 (x,y,w,h)  距左上角距离(x,y)与像素宽高(w,h)
+    @params bReverse: True: 模板在上, False: 模板在下
     """
     if not imgUrl or not lngTmp or not hrTmp:
         return None
@@ -106,6 +139,7 @@ def printImg(imgUrl, lngTmp, hrTmp):
     imgData = Image.open(imgUrl)
     if not imgData:
         return None
+    imgData = imgData.convert('RGBA')
     # w > h 用横向模板 否则 竖向模板
     if imgData.size[0] > imgData.size[1]:
         tmp = hrTmp
@@ -130,24 +164,17 @@ def printImg(imgUrl, lngTmp, hrTmp):
     printer_margins = hDC.GetDeviceCaps (PHYSICALOFFSETX), hDC.GetDeviceCaps (PHYSICALOFFSETY)
     # 预处理
     imgData = preProcessImg(imgData, tmp)
-    #合成图片
+    # 模板图片
     tmpUrl = tmp['tmpUrl']
     if tmpUrl.startswith('http'):
         tmpRes = requests.get(tmpUrl)
         tmpUrl = BytesIO(tmpRes.content)
-    lowImgData = Image.open(tmpUrl)
-    # 模板所有照片的尺寸需要resize到规定的模板尺寸
-    lowImgData = lowImgData.resize((tmp['realW'], tmp['realH']))
-    (x, y, w, h) = (tmp['sx'], tmp['sy'], tmp['selW'], tmp['selH'])
-
-    # if lowImgData.size[0] > lowImgData.size[1]:
-    #     lowImgData = lowImgData.rotate(90, expand=True)
-    #     x, y = y, x
-    #     w, h = h, w
-
-    cnbImg = conbineImgs(imgData, lowImgData, {
-        'box': (x, y , w, h)
-    })
+    tmpImgData = Image.open(tmpUrl)
+    if not tmpImgData:
+        return None
+    tmpImgData = tmpImgData.convert('RGBA')
+    # 合成
+    cnbImg = getConbinedImg(imgData, tmpImgData, tmp, bReverse)
     # cnbImg.save('D:\\Node\\Imgs\\comp\\%s.png' % imgName)
     # return imgName
     # cnbImg.show()
@@ -195,5 +222,5 @@ class ImgPrinter(object):
         return win32print.EnumPrinters(flag, name, lvl)
 
     @classmethod
-    def print(cls, imgUrl, lngTmp, hrTmp):
-        return printImg(imgUrl, lngTmp, hrTmp)
+    def print(cls, imgUrl, lngTmp, hrTmp, bReverse):
+        return printImg(imgUrl, lngTmp, hrTmp, bReverse)

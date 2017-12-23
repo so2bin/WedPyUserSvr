@@ -66,17 +66,18 @@ class HTTPHandler(BaseHandler):
     def doPost(cls, request):
         """
         @params imgUrl:
-        @params tplUrl:  模板地址
-        @params template:  模板参数
+        @params bReverse:  True: 模板在上, False: 模板在下
+        @params template:  模板数据
             {lng: {tmpUrl, tmpW, tmpH, rw, rh, sx, sy, ex, ey, selW, selH, realW, realH}, hr: {}}
         """
         imgUrl = request.data['imgUrl']
         tmp = request.data['template']
+        bReverse = request.data['bReverse']
         lngTmp = tmp['lng']
         hrTmp = tmp['hr']
         newLngTmp = _zoomToRealSize(_initPrintParams(lngTmp))
         newHrTmp = _zoomToRealSize(_initPrintParams(hrTmp))
-        imgName = ImgPrinter.print(imgUrl, newLngTmp, newHrTmp)
+        imgName = ImgPrinter.print(imgUrl, newLngTmp, newHrTmp, bReverse)
         if not imgName:
             request.response = {'status': 1, 'msg': 'Print Error, Maybe Invalid image address'}
         request.response = {'status': 0, 'imgName': imgName}
