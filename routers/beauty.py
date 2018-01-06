@@ -10,6 +10,24 @@ from config import IMG_SUPPORTS, DEFAULT_IMG_EXT
 from libs import imgBeauty, imgNo
 
 
+def calc_moved_name(fp, dest):
+    fname = os.path.basename(fp)
+    f, ext = os.path.splitext(fname)
+    dfname = os.path.join(dest, fname)
+    if os.path.exists(dfname):
+        newfname = dest + f + '_c' + ext
+        return calc_moved_name(newfname, dest)
+    else:
+        return dfname
+
+
+def movefile(src, dest):
+    if os.path.isfile(src):
+        fpath = calc_moved_name(src, dest)
+        shutil.copy(src, fpath)
+        os.unlink(src)
+
+
 class HTTPHandler(BaseHandler):
     @classmethod
     def doGet(cls, request):
@@ -94,5 +112,5 @@ class HTTPHandler(BaseHandler):
             svImgPath = os.path.join(toAddr, "%s.%s" % (snm, svImgExt))
             imgData.save(svImgPath)
             # move to backbend folder
-            shutil.move(img, moveAddr)
+            movefile(img, moveAddr)
         return cls.jsonResponse(request, {'status': 0, 'imgNo': saveNos})
